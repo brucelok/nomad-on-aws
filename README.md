@@ -30,42 +30,33 @@ Use the following command to build the AMI:
 $ packer build packer.json
 ```
 
-## Provision a cluster with Terraform
+## Prepare variables for Terraform build
 
-`cd` to an environment subdirectory:
-
-```bash
-$ cd env/us-east
-```
-
-Update `terraform.tfvars` with your SSH key name and your AMI ID if you created 
-a custom AMI:
-
-```bash
-region                  = "us-east-1"
-ami                     = "ami-09730698a875f6abd"
-instance_type           = "t2.medium"
-key_name                = "KEY_NAME"
-server_count            = "3"
-client_count            = "4"
-```
-
-Modify the `region`, `instance_type`, `server_count`, and `client_count` variables
+Update `terraform.tfvars` with your SSH key name and your AMI ID (if you created 
+a custom AMI), `region`, `instance_type`, `server_count`, and `client_count` variables
 as appropriate. At least one client and one server are required. You can 
 optionally replace the Nomad binary at runtime by adding the `nomad_binary` 
 variable like so:
 
 ```bash
-region                  = "us-east-1"
-ami                     = "ami-09730698a875f6abd"
-instance_type           = "t2.medium"
-key_name                = "KEY_NAME"
-server_count            = "3"
-client_count            = "4"
-nomad_binary            = "https://releases.hashicorp.com/nomad/0.7.0/nomad_0.7.0_linux_amd64.zip"
+name = "nomad"
+key_name = "myMacbook"
+nomad_binary = "https://releases.hashicorp.com/nomad/1.5.1/nomad_1.5.1_linux_amd64.zip"
+region = "ap-southeast-2"
+ami = "ami-0a2a058201b0c3486"
+server_instance_type = "t2.small"
+server_count         = "3"
+client_instance_type = "t2.medium"
+client_count         = "2"
 ```
 
-Provision the cluster:
+By default, the infrastructure that is provisioned for this test environment is configured to 
+allow all traffic over port 22. You can add the `whitelist_ip` variable in the terraform.tfvars which only allows your IP address. For example
+```
+whitelist_ip = "120.200.10.6/32"
+```
+
+## Provision the cluster
 
 ```bash
 $ terraform init
@@ -82,10 +73,17 @@ SSH to one of the servers using its public IP:
 $ ssh -i /path/to/private/key ubuntu@PUBLIC_IP
 ```
 
-The infrastructure that is provisioned for this test environment is configured to 
-allow all traffic over port 22. This is obviously not recommended for production 
-deployments.
-
 ## Next Steps
 
-Click [here](../README.md#test) for next steps.
+Verify the Nomad and Consul clusters with the following commands
+```bash
+nomad server members
+nomad node status
+consul members
+consul operator raft list-peers
+```
+
+Then you can start to run sample job
+```bash
+nomad job init -connect
+```
